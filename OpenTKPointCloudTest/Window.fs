@@ -257,8 +257,9 @@ type Window() =
             | (true, false) ->
                 let transform = MouseInteraction.mouseUp glState.ModelTransform (size, point)
                 this.UpdateGlState { glState with ModelTransform = transform }
-            | (true, true) ->
+            | (true, true)
+            | (false, false) ->
                 let transform = MouseInteraction.mouseMove glState.ModelTransform (size, point)
                 this.UpdateGlState { glState with ModelTransform = transform }
-            | (false, false) ->
-                ()
+
+            mouseWasDown <- mouseIsDown
