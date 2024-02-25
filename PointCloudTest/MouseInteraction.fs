@@ -1,21 +1,22 @@
 ﻿namespace PointCloudTest
 
-open System.Numerics
+open OpenTK.Mathematics
+open System
 
 module MouseInteraction =
     type DragType = | Rotate
 
     type DragMovement =
         {
-            ControlSize : Avalonia.Size
-            From        : Avalonia.Point
-            To          : Avalonia.Point
+            ControlSize : Vector2
+            From        : Vector2
+            To          : Vector2
             Type        : DragType
         }
 
     module DragMovement =
-        let dx (dm : DragMovement) = (dm.To.X - dm.From.X) / dm.ControlSize.Width  |> single
-        let dy (dm : DragMovement) = (dm.To.Y - dm.From.Y) / dm.ControlSize.Height |> single
+        let dx (dm : DragMovement) = (dm.To.X - dm.From.X) / dm.ControlSize.X |> single
+        let dy (dm : DragMovement) = (dm.To.Y - dm.From.Y) / dm.ControlSize.Y |> single
 
     type TransformInteraction =
     | Drag of DragMovement
@@ -23,9 +24,9 @@ module MouseInteraction =
     type ModelTransform =
         {
             Center         : Vector3
-            Translation    : Matrix4x4
-            Rotation       : Matrix4x4
-            Scaling        : Matrix4x4
+            Translation    : Matrix4
+            Rotation       : Matrix4
+            Scaling        : Matrix4
             PanSensitivity : single
         }
 
@@ -34,20 +35,30 @@ module MouseInteraction =
             modelTransform.Scaling * modelTransform.Rotation * modelTransform.Translation
 
         let normMatrix modelTransform =
-            match Matrix4x4.Invert(modelTransform.Rotation) with
-            | true, inv ->
-                Matrix4x4.Transpose(inv)
-            | false, _ ->
-                Matrix4x4.Identity
+            try
+                let inv = Matrix4.Invert(modelTransform.Rotation)
+                Matrix4.Transpose(inv)
+            with
+            | :? InvalidOperationException ->
+                Matrix4.Identity
 
         let defaults =
             {
                 Center         = Vector3.Zero
-                Translation    = Matrix4x4.Identity
-                Rotation       = Matrix4x4.Identity
-                Scaling        = Matrix4x4.Identity
+                Translation    = Matrix4.Identity
+                Rotation       = Matrix4.Identity
+                Scaling        = Matrix4.Identity
                 PanSensitivity = 2.0f
             }
+
+        let createFromYawPitchRoll (y, p, r) =
+            let m = System.Numerics.Matrix4x4.CreateFromYawPitchRoll(y, p, r)
+            Matrix4(
+                m.M11, m.M12, m.M13, m.M14,
+                m.M21, m.M22, m.M23, m.M24,
+                m.M31, m.M32, m.M33, m.M34,
+                m.M41, m.M42, m.M43, m.M44
+            )
 
         let applyInteraction modelTransform interaction =
             match interaction with
@@ -59,9 +70,9 @@ module MouseInteraction =
                     let aboutY = dx * System.MathF.PI
                     let aboutZ = dy * System.MathF.PI
                     let rotation =
-                        Matrix4x4.CreateTranslation(-modelTransform.Center) *
-                        Matrix4x4.CreateFromYawPitchRoll(aboutY, aboutZ, 0f) *
-                        Matrix4x4.CreateTranslation(modelTransform.Center)
+                        Matrix4.CreateTranslation(-modelTransform.Center) *
+                        createFromYawPitchRoll(aboutY, aboutZ, 0f) *
+                        Matrix4.CreateTranslation(modelTransform.Center)
 
                     { modelTransform with Rotation = modelTransform.Rotation * rotation }
 

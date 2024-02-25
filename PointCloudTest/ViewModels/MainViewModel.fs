@@ -1,6 +1,6 @@
 ﻿namespace PointCloudTest.ViewModels
 
-open System.Numerics
+open OpenTK.Mathematics
 open PointCloudTest
 
 type MainViewModel() =
