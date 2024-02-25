@@ -211,6 +211,8 @@ type PointCloudControl() =
         | None ->
             printfn "GL Data not created"
         | Some glState ->
+            gl.UseProgram(glState.ShaderProgram)
+
             let model = glState.ModelTransform.CurrentTransform |> MouseInteraction.ModelTransform.matrix
             let pointCloud1 = glState.Cloud1Buffer
             let pointCloud2 = glState.Cloud2Buffer
