@@ -14,7 +14,8 @@ module Program =
             .WithInterFont()
             .LogToTrace(areas = Array.empty)
             .UseReactiveUI()
-            .With(Win32PlatformOptions(RenderingMode = [Win32RenderingMode.Wgl]))
+            //.With(Win32PlatformOptions(RenderingMode = [Win32RenderingMode.Wgl]))
+            .With(Win32PlatformOptions(RenderingMode = [Win32RenderingMode.AngleEgl]))
 
     [<EntryPoint; STAThread>]
     let main argv =

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PointCloudTest.Desktop": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
