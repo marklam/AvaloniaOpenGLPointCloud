@@ -408,6 +408,7 @@ type PointCloudControl() =
     override this.OnOpenGlRender(gl, fb) =
         printfn $"OnOpenGlRender {System.Threading.Interlocked.Increment &nDraw} fb={fb}"
         this.GlRender this.Bounds
+        GL.Finish()
 
     override _.EndInit() =
         base.RequestNextFrameRendering()
