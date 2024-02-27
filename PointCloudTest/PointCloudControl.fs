@@ -400,7 +400,7 @@ type PointCloudControl() =
     override this.OnOpenGlRender(gl, fb) =
         printfn $"OnOpenGlRender {System.Threading.Interlocked.Increment &nDraw} fb={fb}"
         glHandle
-        |> Option.iter (fun glapi -> this.GlRender glapi this.Bounds)
+        |> Option.iter (fun glapi -> this.GlRender glapi this.Bounds; glapi.Finish())
 
     override _.EndInit() =
         base.RequestNextFrameRendering()
