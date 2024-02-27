@@ -27,6 +27,6 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.9" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.9" />
-    <PackageReference Include="OpenTK" Version="4.8.2" />
+    <PackageReference Include="OpenTK" Version="5.0.0-pre.9" />
   </ItemGroup>
 </Project>

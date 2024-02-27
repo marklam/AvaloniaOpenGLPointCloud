@@ -2,7 +2,7 @@
 
 open System.Runtime.InteropServices
 open OpenTK
-open OpenTK.Graphics.OpenGL4
+open OpenTK.Graphics.OpenGL
 open OpenTK.Mathematics
 open Avalonia
 open Avalonia.Threading
@@ -10,6 +10,7 @@ open Avalonia.OpenGL
 open Avalonia.OpenGL.Controls
 open Avalonia.Input
 open Avalonia.Rendering
+open OpenTK.Graphics
 
 #nowarn "9"
 module VoidPtr =
@@ -37,8 +38,8 @@ type GLState =
         Cloud1Buffer      : BuffersForDraw
         Cloud2Buffer      : BuffersForDraw
         ContainingCube    : BuffersForIndexedDraw
-        PositionLocation  : int
-        IntensityLocation : int
+        PositionLocation  : uint
+        IntensityLocation : uint
         ShaderProgram     : int
         ModelTransform    : MouseInteraction.Transform
     }
@@ -61,9 +62,9 @@ type PointCloudControl() =
     static let cameraFront = Vector3(0f, 0f, -1f)
     static let cameraUp = Vector3(0f, 1f, 0f)
 
-    static let vertexShaderSource = """#version 330 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in float aIntensity;
+    static let vertexShaderSource = """#version 300 es
+        in vec3 aPos;
+        in float aIntensity;
 
         uniform mat4 uModel;
         uniform mat4 uView;
@@ -79,7 +80,8 @@ type PointCloudControl() =
         }
         """
 
-    static let fragmentShaderSource = """#version 330 core
+    static let fragmentShaderSource = """#version 300 es
+        precision mediump float;
         in vec4 Color;
         out vec4 FragColor;
 
@@ -117,14 +119,20 @@ type PointCloudControl() =
 
     let containingCube () =
         let vertexArray = GL.GenVertexArray()
+        OpenGLHelpers.checkGL()
+
         GL.BindVertexArray vertexArray
+        OpenGLHelpers.checkGL()
+
         let vboCube = OpenGLHelpers.copyItemsToBuffer cubeVertices
         let iboCube = OpenGLHelpers.copyIndexesToBuffer cubeIndices
 
         let positionLocation = 0u
         GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, sizeof<Vector3>, nativeint 0)
+        OpenGLHelpers.checkGL()
 
-        GL.BindVertexArray 0u
+        GL.BindVertexArray 0
+        OpenGLHelpers.checkGL()
 
         { BuffersForDraw = { Vertexes = vboCube; VertexArray = vertexArray; PrimitiveCount = 36; PrimitiveType = PrimitiveType.Triangles }; Indexes = iboCube; IndexType = DrawElementsType.UnsignedInt }
 
@@ -147,51 +155,95 @@ type PointCloudControl() =
         | None ->
             printfn "Invalid DataContext"
         | Some (state : PointCloudViewModel) ->
+            OpenGLHelpers.enableDebugging()
 
             let cloud1VertexArray = GL.GenVertexArray()
-            let cloud2VertexArray = GL.GenVertexArray()
+            OpenGLHelpers.checkGL()
 
-            let positionLocation = 0
-            let intensityLocation = 1
+            let cloud2VertexArray = GL.GenVertexArray()
+            OpenGLHelpers.checkGL()
+
+            let positionLocation = 0u
+            let intensityLocation = 1u
 
             let cloud1VertexBuffer =
                 GL.BindVertexArray cloud1VertexArray
+                OpenGLHelpers.checkGL()
 
                 let vertexBufferObject1 = OpenGLHelpers.copyItemsToBuffer state.Cloud1
                 GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, PointVertex.Size, PointVertex.PositionOffset)
-                GL.VertexAttribPointer(intensityLocation, 1, VertexAttribPointerType.Float, false, PointVertex.Size, PointVertex.IntensityOffset)
-                GL.EnableVertexAttribArray positionLocation
-                GL.EnableVertexAttribArray intensityLocation
+                OpenGLHelpers.checkGL()
 
-                GL.BindVertexArray 0u
+                GL.VertexAttribPointer(intensityLocation, 1, VertexAttribPointerType.Float, false, PointVertex.Size, PointVertex.IntensityOffset)
+                OpenGLHelpers.checkGL()
+
+                GL.EnableVertexAttribArray positionLocation
+                OpenGLHelpers.checkGL()
+
+                GL.EnableVertexAttribArray intensityLocation
+                OpenGLHelpers.checkGL()
+
+                GL.BindVertexArray 0
+                OpenGLHelpers.checkGL()
 
                 { Vertexes = vertexBufferObject1; VertexArray = cloud1VertexArray; PrimitiveType = PrimitiveType.Points; PrimitiveCount = state.Cloud1.Length }
 
             let cloud2VertexBuffer =
                 GL.BindVertexArray cloud2VertexArray
+                OpenGLHelpers.checkGL()
 
                 let vertexBufferObject2 = OpenGLHelpers.copyItemsToBuffer state.Cloud2
                 GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, PointVertex.Size, PointVertex.PositionOffset)
-                GL.VertexAttribPointer(intensityLocation, 1, VertexAttribPointerType.Float, false, PointVertex.Size, PointVertex.IntensityOffset)
-                GL.EnableVertexAttribArray positionLocation
-                GL.EnableVertexAttribArray intensityLocation
+                OpenGLHelpers.checkGL()
 
-                GL.BindVertexArray 0u
+                GL.VertexAttribPointer(intensityLocation, 1, VertexAttribPointerType.Float, false, PointVertex.Size, PointVertex.IntensityOffset)
+                OpenGLHelpers.checkGL()
+
+                GL.EnableVertexAttribArray positionLocation
+                OpenGLHelpers.checkGL()
+
+                GL.EnableVertexAttribArray intensityLocation
+                OpenGLHelpers.checkGL()
+
+                GL.BindVertexArray 0
+                OpenGLHelpers.checkGL()
 
                 { Vertexes = vertexBufferObject2; VertexArray = cloud2VertexArray; PrimitiveType = PrimitiveType.Points; PrimitiveCount = state.Cloud2.Length }
 
             let vertexShader = GL.CreateShader ShaderType.VertexShader
+            OpenGLHelpers.checkGL()
+
             OpenGLHelpers.compileShaderSource vertexShader vertexShaderSource
 
             let fragmentShader = GL.CreateShader ShaderType.FragmentShader
+            OpenGLHelpers.checkGL()
+
             OpenGLHelpers.compileShaderSource fragmentShader fragmentShaderSource
 
             let shaderProgram = GL.CreateProgram()
+            OpenGLHelpers.checkGL()
+
             GL.AttachShader(shaderProgram, vertexShader)
+            OpenGLHelpers.checkGL()
+
             GL.AttachShader(shaderProgram, fragmentShader)
+            OpenGLHelpers.checkGL()
+
             GL.BindAttribLocation(shaderProgram, positionLocation, "aPos")
+            OpenGLHelpers.checkGL()
+
             GL.BindAttribLocation(shaderProgram, intensityLocation, "aIntensity")
+            OpenGLHelpers.checkGL()
+
             GL.LinkProgram shaderProgram
+            OpenGLHelpers.checkGL()
+
+            let mutable message = GL.GetProgramInfoLog(shaderProgram)
+            printfn "Shader program link message"
+            printfn "%s" message
+
+            GL.ValidateProgram shaderProgram
+            OpenGLHelpers.checkGL()
 
             let cube = containingCube()
 
@@ -211,26 +263,42 @@ type PointCloudControl() =
         | None ->
             printfn "GL Data not created"
         | Some glState ->
-            GL.UseProgram(glState.ShaderProgram)
-
             let model = glState.ModelTransform.CurrentTransform |> MouseInteraction.ModelTransform.matrix
             let pointCloud1 = glState.Cloud1Buffer
             let pointCloud2 = glState.Cloud2Buffer
 
             GL.Enable EnableCap.CullFace
+            OpenGLHelpers.checkGL()
+
             GL.FrontFace FrontFaceDirection.Cw
-            GL.CullFace CullFaceMode.Back
+            OpenGLHelpers.checkGL()
+
+            GL.CullFace TriangleFace.Back
+            OpenGLHelpers.checkGL()
+
             GL.Enable EnableCap.DepthTest
+            OpenGLHelpers.checkGL()
 
             GL.ClearColor(0f, 0f, 0f, 1f)
+            OpenGLHelpers.checkGL()
+
             GL.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
-            GL.Viewport (System.Drawing.Rectangle(0, 0, (int)(bounds.Width * 1.5), (int)(bounds.Height * 1.5)))
+            OpenGLHelpers.checkGL()
+
+            GL.Viewport (0, 0, (int)(bounds.Width * 1.5), (int)(bounds.Height * 1.5))
+            OpenGLHelpers.checkGL()
 
             GL.UseProgram glState.ShaderProgram
+            OpenGLHelpers.checkGL()
 
             let modelLoc = GL.GetUniformLocation (glState.ShaderProgram, "uModel")
+            OpenGLHelpers.checkGL()
+
             let viewLoc = GL.GetUniformLocation (glState.ShaderProgram, "uView")
+            OpenGLHelpers.checkGL()
+
             let projectionLoc = GL.GetUniformLocation (glState.ShaderProgram, "uProjection")
+            OpenGLHelpers.checkGL()
 
             let view = Matrix4.LookAt(cameraPos, cameraPos+cameraFront, cameraUp)
             let projection = Matrix4.CreatePerspectiveFieldOfView(single (System.Math.PI / 2.), single (bounds.Width / bounds.Height), 0.1f, 100.0f)
@@ -240,37 +308,68 @@ type PointCloudControl() =
             OpenGLHelpers.uniformMatrix4fv projectionLoc false &projection
 
             // Cloud
+
             GL.BindVertexArray pointCloud1.VertexArray
+            OpenGLHelpers.checkGL()
+
             GL.EnableVertexAttribArray glState.PositionLocation
+            OpenGLHelpers.checkGL()
+
             GL.EnableVertexAttribArray glState.IntensityLocation
+            OpenGLHelpers.checkGL()
+
             GL.DrawArrays (pointCloud1.PrimitiveType, 0, pointCloud1.PrimitiveCount)
+            OpenGLHelpers.checkGL()
+
             GL.DisableVertexAttribArray glState.PositionLocation
+            OpenGLHelpers.checkGL()
+
             GL.DisableVertexAttribArray glState.IntensityLocation
+            OpenGLHelpers.checkGL()
 
             GL.BindVertexArray pointCloud2.VertexArray
+            OpenGLHelpers.checkGL()
+
             GL.EnableVertexAttribArray glState.PositionLocation
+            OpenGLHelpers.checkGL()
+
             GL.EnableVertexAttribArray glState.IntensityLocation
+            OpenGLHelpers.checkGL()
+
             GL.DrawArrays (pointCloud2.PrimitiveType, 0, pointCloud2.PrimitiveCount)
+            OpenGLHelpers.checkGL()
+
             GL.DisableVertexAttribArray glState.PositionLocation
+            OpenGLHelpers.checkGL()
+
             GL.DisableVertexAttribArray glState.IntensityLocation
+            OpenGLHelpers.checkGL()
 
             // Cube
-            GL.PolygonMode (MaterialFace.FrontAndBack, PolygonMode.Line)
-            GL.BindVertexArray glState.ContainingCube.BuffersForDraw.VertexArray
-            GL.EnableVertexAttribArray glState.PositionLocation
-            GL.DrawElements (glState.ContainingCube.BuffersForDraw.PrimitiveType, glState.ContainingCube.BuffersForDraw.PrimitiveCount, glState.ContainingCube.IndexType, nativeint 0)
-            GL.DisableVertexAttribArray glState.PositionLocation
+            //GL.PolygonMode (TriangleFace.FrontAndBack, PolygonMode.Line)
+            //OpenGLHelpers.checkGL()
 
-            GL.BindVertexArray 0u
+            //GL.BindVertexArray glState.ContainingCube.BuffersForDraw.VertexArray
+            //OpenGLHelpers.checkGL()
 
+            //GL.EnableVertexAttribArray glState.PositionLocation
+            //OpenGLHelpers.checkGL()
 
+            //GL.DrawElements (glState.ContainingCube.BuffersForDraw.PrimitiveType, glState.ContainingCube.BuffersForDraw.PrimitiveCount, glState.ContainingCube.IndexType, nativeint 0)
+            //OpenGLHelpers.checkGL()
+
+            //GL.DisableVertexAttribArray glState.PositionLocation
+            //OpenGLHelpers.checkGL()
+
+            //GL.BindVertexArray 0
+            //OpenGLHelpers.checkGL()
 
     member _.GlDeInit () =
         // Unbind everything
-        GL.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        GL.BindBuffer (BufferTarget.ElementArrayBuffer, 0u)
-        GL.BindVertexArray 0u
-        GL.UseProgram 0u
+        GL.BindBuffer (BufferTargetARB.ArrayBuffer, 0)
+        GL.BindBuffer (BufferTargetARB.ElementArrayBuffer, 0)
+        GL.BindVertexArray 0
+        GL.UseProgram 0
 
         match glState with
         | None -> ()
@@ -284,7 +383,9 @@ type PointCloudControl() =
         glState <- None
 
     member this.Setup(gl : GlInterface) =
-        GL.LoadBindings { new IBindingsContext with member _.GetProcAddress x = gl.GetProcAddress x }
+        GLLoader.LoadBindings { new IBindingsContext with member _.GetProcAddress x = gl.GetProcAddress x }
+        GL.GetError() |> ignore
+
         this.GlInit ()
 
     override this.OnOpenGlInit(gl) =

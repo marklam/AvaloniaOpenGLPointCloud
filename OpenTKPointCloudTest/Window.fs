@@ -2,13 +2,12 @@
 
 open OpenTK.Windowing.Desktop
 open OpenTK.Mathematics
-open OpenTK.Graphics.OpenGL4
+open OpenTK.Graphics.OpenGL
 open OpenTK.Windowing.Common
-open OpenTK.Windowing.Desktop
 open OpenTK.Windowing.GraphicsLibraryFramework
 
 type Window() =
-    inherit GameWindow(GameWindowSettings.Default, NativeWindowSettings(Size = Vector2i(1024, 768), Title = "OpenTK Point Cloud Test"))
+    inherit GameWindow(GameWindowSettings.Default, NativeWindowSettings(Size = Vector2i(1024, 768), Title = "OpenTK Point Cloud Test", AutoLoadBindings=false))
 
     let viewModel : PointCloudViewModel =
         let r = System.Random()
@@ -99,7 +98,7 @@ type Window() =
         let positionLocation = 0u
         GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, sizeof<Vector3>, nativeint 0)
 
-        GL.BindVertexArray 0u
+        GL.BindVertexArray 0
 
         { BuffersForDraw = { Vertexes = vboCube; VertexArray = vertexArray; PrimitiveCount = 36; PrimitiveType = PrimitiveType.Triangles }; Indexes = iboCube; IndexType = DrawElementsType.UnsignedInt }
 
@@ -112,8 +111,8 @@ type Window() =
         let cloud1VertexArray = GL.GenVertexArray()
         let cloud2VertexArray = GL.GenVertexArray()
 
-        let positionLocation = 0
-        let intensityLocation = 1
+        let positionLocation = 0u
+        let intensityLocation = 1u
 
         let cloud1VertexBuffer =
             GL.BindVertexArray cloud1VertexArray
@@ -124,7 +123,7 @@ type Window() =
             GL.EnableVertexAttribArray positionLocation
             GL.EnableVertexAttribArray intensityLocation
 
-            GL.BindVertexArray 0u
+            GL.BindVertexArray 0
 
             { Vertexes = vertexBufferObject1; VertexArray = cloud1VertexArray; PrimitiveType = PrimitiveType.Points; PrimitiveCount = viewModel.Cloud1.Length }
 
@@ -137,7 +136,7 @@ type Window() =
             GL.EnableVertexAttribArray positionLocation
             GL.EnableVertexAttribArray intensityLocation
 
-            GL.BindVertexArray 0u
+            GL.BindVertexArray 0
 
             { Vertexes = vertexBufferObject2; VertexArray = cloud2VertexArray; PrimitiveType = PrimitiveType.Points; PrimitiveCount = viewModel.Cloud2.Length }
 
@@ -186,12 +185,12 @@ type Window() =
 
             GL.Enable EnableCap.CullFace
             GL.FrontFace FrontFaceDirection.Cw
-            GL.CullFace CullFaceMode.Back
+            GL.CullFace TriangleFace.Back
             GL.Enable EnableCap.DepthTest
 
             GL.ClearColor(0f, 0f, 0f, 1f)
             GL.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
-            GL.Viewport (System.Drawing.Rectangle(0, 0, int width, int height))
+            GL.Viewport (0, 0, int width, int height)
 
             GL.UseProgram glState.ShaderProgram
 
@@ -202,9 +201,9 @@ type Window() =
             let view = Matrix4.LookAt(cameraPos, cameraPos+cameraFront, cameraUp)
             let projection = Matrix4.CreatePerspectiveFieldOfView(single (System.Math.PI / 2.), single (width / height), 0.1f, 100.0f)
 
-            OpenGLHelpers.uniformMatrix4fv viewLoc false &view
-            OpenGLHelpers.uniformMatrix4fv modelLoc false &model
-            OpenGLHelpers.uniformMatrix4fv projectionLoc false &projection
+            OpenGLHelpers.uniformMatrix4fv glState.ShaderProgram viewLoc false &view
+            OpenGLHelpers.uniformMatrix4fv glState.ShaderProgram modelLoc false &model
+            OpenGLHelpers.uniformMatrix4fv glState.ShaderProgram projectionLoc false &projection
 
             // Cloud
             GL.BindVertexArray pointCloud1.VertexArray
@@ -222,13 +221,13 @@ type Window() =
             GL.DisableVertexAttribArray glState.IntensityLocation
 
             // Cube
-            GL.PolygonMode (MaterialFace.FrontAndBack, PolygonMode.Line)
+            GL.PolygonMode (TriangleFace.FrontAndBack, PolygonMode.Line)
             GL.BindVertexArray glState.ContainingCube.BuffersForDraw.VertexArray
             GL.EnableVertexAttribArray glState.PositionLocation
             GL.DrawElements (glState.ContainingCube.BuffersForDraw.PrimitiveType, glState.ContainingCube.BuffersForDraw.PrimitiveCount, glState.ContainingCube.IndexType, nativeint 0)
             GL.DisableVertexAttribArray glState.PositionLocation
 
-            GL.BindVertexArray 0u
+            GL.BindVertexArray 0
 
         base.SwapBuffers()
 
