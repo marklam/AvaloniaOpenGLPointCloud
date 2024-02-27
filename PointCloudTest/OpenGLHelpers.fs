@@ -65,3 +65,4 @@ module OpenGLHelpers =
         checkGL()
 
         GL.DebugMessageCallback(GLDebugProc dproc, nativeint 0)
+        checkGL()

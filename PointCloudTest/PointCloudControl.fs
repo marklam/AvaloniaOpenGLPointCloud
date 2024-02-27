@@ -155,6 +155,7 @@ type PointCloudControl() =
         | None ->
             printfn "Invalid DataContext"
         | Some (state : PointCloudViewModel) ->
+            GL.GetError() |> ignore
             OpenGLHelpers.enableDebugging()
 
             let cloud1VertexArray = GL.GenVertexArray()
@@ -346,23 +347,27 @@ type PointCloudControl() =
             OpenGLHelpers.checkGL()
 
             // Cube
-            //GL.PolygonMode (TriangleFace.FrontAndBack, PolygonMode.Line)
-            //OpenGLHelpers.checkGL()
+            try
+                GL.PolygonMode (TriangleFace.FrontAndBack, PolygonMode.Line)
+                OpenGLHelpers.checkGL()
 
-            //GL.BindVertexArray glState.ContainingCube.BuffersForDraw.VertexArray
-            //OpenGLHelpers.checkGL()
+                GL.BindVertexArray glState.ContainingCube.BuffersForDraw.VertexArray
+                OpenGLHelpers.checkGL()
 
-            //GL.EnableVertexAttribArray glState.PositionLocation
-            //OpenGLHelpers.checkGL()
+                GL.EnableVertexAttribArray glState.PositionLocation
+                OpenGLHelpers.checkGL()
 
-            //GL.DrawElements (glState.ContainingCube.BuffersForDraw.PrimitiveType, glState.ContainingCube.BuffersForDraw.PrimitiveCount, glState.ContainingCube.IndexType, nativeint 0)
-            //OpenGLHelpers.checkGL()
+                GL.DrawElements (glState.ContainingCube.BuffersForDraw.PrimitiveType, glState.ContainingCube.BuffersForDraw.PrimitiveCount, glState.ContainingCube.IndexType, nativeint 0)
+                OpenGLHelpers.checkGL()
 
-            //GL.DisableVertexAttribArray glState.PositionLocation
-            //OpenGLHelpers.checkGL()
+                GL.DisableVertexAttribArray glState.PositionLocation
+                OpenGLHelpers.checkGL()
 
-            //GL.BindVertexArray 0
-            //OpenGLHelpers.checkGL()
+                GL.BindVertexArray 0
+                OpenGLHelpers.checkGL()
+            with // Can't actually catch this, but it's because the glPolygonMode call is not supported in the Angle DLL
+            | :? System.AccessViolationException as e ->
+                printfn "AccessViolationException: %A" e
 
     member _.GlDeInit () =
         // Unbind everything
